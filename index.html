@@ -140,6 +140,25 @@
       background: #fffbeb; color: #b45309; border-color: #fde68a;
     }
 
+    /* Hero / intro */
+    .page-intro {
+      margin-bottom: 36px; padding-bottom: 32px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .page-intro h1 {
+      font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 8px;
+    }
+    .page-intro p {
+      color: #6b7280; font-size: 14px; line-height: 1.6; max-width: 600px;
+    }
+    .page-intro .intro-links {
+      margin-top: 12px; display: flex; gap: 16px;
+    }
+    .page-intro .intro-links a {
+      font-size: 13px; color: #3f51b5; text-decoration: none;
+    }
+    .page-intro .intro-links a:hover { text-decoration: underline; }
+
     /* Footer */
     footer {
       border-top: 1px solid #e5e7eb; background: #fafafa;
@@ -3121,6 +3140,15 @@ console.log(result)
       },
       template: `
         <main ref="mainRef">
+          <div v-if="!searchQuery" class="page-intro">
+            <h1>_.NoDash()</h1>
+            <p>A fast, searchable reference for vanilla JS alternatives to lodash and underscore.js — no dependencies, no build step. Each entry shows the lodash signature alongside a native JS or short Vue 3 composable equivalent.</p>
+            <div class="intro-links">
+              <a href="https://github.com/you-dont-need/You-Dont-Need-Lodash-Underscore" target="_blank" rel="noopener">You Don't Need Lodash</a>
+              <a href="https://lodash.com/docs" target="_blank" rel="noopener">Lodash docs</a>
+              <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference" target="_blank" rel="noopener">MDN reference</a>
+            </div>
+          </div>
           <p v-if="methods.length === 0" class="empty-state">
             No methods found for '{{ searchQuery }}'
           </p>
