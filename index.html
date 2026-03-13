@@ -1,0 +1,3208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NoDash</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           background: #fff; color: #333; font-size: 14px; }
+
+    /* Top bar */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0; height: 48px;
+      background: #3f51b5; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo-dash { color: #a5b4fc; }
+    .search-input {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px; padding: 4px 10px;
+      width: 220px; font-size: 13px; color: #fff; outline: none;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.6); }
+    .version-badge {
+      font-size: 12px; background: rgba(255,255,255,0.2);
+      padding: 2px 8px; border-radius: 10px;
+    }
+
+    /* Layout */
+    .layout { display: flex; padding-top: 48px; }
+    .content-wrap {
+      margin-left: 200px; display: flex; flex-direction: column;
+      min-height: calc(100vh - 48px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed; top: 48px; bottom: 0; width: 200px;
+      background: #fafafa; border-right: 1px solid #e5e7eb;
+      overflow-y: auto; padding: 16px 0;
+    }
+    .sidebar-category {
+      padding: 6px 16px 2px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: #6b7280; margin-top: 8px;
+    }
+    .sidebar-method {
+      display: block; padding: 3px 16px 3px 24px;
+      color: #374151; font-size: 13px; text-decoration: none;
+    }
+    .sidebar-method:hover { color: #3f51b5; background: #eff6ff; }
+    .sidebar-method.active { color: #3f51b5; font-weight: 600; }
+
+    /* Main content */
+    main { padding: 32px 40px; max-width: 900px; flex: 1; }
+    .empty-state { color: #6b7280; font-size: 14px; margin-top: 20px; }
+
+    /* Method card */
+    .method-section {
+      margin-bottom: 40px; padding-bottom: 40px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .method-signature {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 6px;
+    }
+    .method-signature a { color: inherit; text-decoration: none; }
+    .method-signature a:hover { color: #3f51b5; }
+    .method-subtitle { font-size: 11px; color: #9ca3af; margin-bottom: 10px; }
+    .method-desc { color: #374151; margin-bottom: 14px; line-height: 1.6; }
+
+    /* Args table */
+    .args-table {
+      width: 100%; border-collapse: collapse;
+      margin-bottom: 14px; font-size: 13px;
+    }
+    .args-table th {
+      text-align: left; padding: 4px 8px;
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      color: #6b7280; font-weight: 600;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .args-table td { padding: 5px 8px; border: 1px solid #e5e7eb; }
+    .arg-type { font-family: monospace; color: #7c3aed; font-size: 12px; }
+
+    /* Returns */
+    .returns-header {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #9ca3af; font-weight: 700; margin-bottom: 6px; margin-top: 14px;
+    }
+    .returns-value { font-size: 13px; color: #374151; margin-bottom: 14px; }
+
+    /* Code block */
+    .code-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: #6b7280; margin-bottom: 4px; font-weight: 600;
+    }
+    .code-pre {
+      background: #1e1e2e; color: #cdd6f4;
+      border-radius: 6px; padding: 16px 20px;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 13px; overflow-x: auto;
+      line-height: 1.6; position: relative;
+      margin-bottom: 10px;
+      white-space: pre;
+    }
+    .kw  { color: #cba6f7; }
+    .str { color: #a6e3a1; }
+    .num { color: #fab387; }
+    .cm  { color: #6c7086; }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(255,255,255,0.1); border: none;
+      color: #94a3b8; border-radius: 4px;
+      padding: 3px 8px; font-size: 11px; cursor: pointer;
+    }
+
+    /* Compat badges */
+    .compat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .compat-badge {
+      font-size: 11px; padding: 2px 8px; border-radius: 3px;
+      background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
+    }
+    .compat-badge.unsupported {
+      background: #fffbeb; color: #b45309; border-color: #fde68a;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid #e5e7eb; background: #fafafa;
+      padding: 20px 40px;
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: #9ca3af;
+    }
+    footer a { color: #6b7280; text-decoration: none; }
+    footer a:hover { color: #3f51b5; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+
+    import { createApp, defineComponent, ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+
+    // ── Methods data ──────────────────────────────────────────────────────────
+const methods = [
+  {
+    id: 'chunk',
+    name: '_.chunk',
+    signature: '_.chunk(array, size)',
+    category: 'Array',
+    description: 'Creates an array of elements split into groups the length of size.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to process.' },
+      { name: 'size', type: 'number', description: 'The length of each chunk.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const chunk = (input, size) => {
+  return input.reduce((arr, item, idx) => {
+    return idx % size === 0
+      ? [...arr, [item]]
+      : [...arr.slice(0, -1), [...arr.slice(-1)[0], item]];
+  }, []);
+};
+
+chunk(['a', 'b', 'c', 'd'], 2);
+// => [['a', 'b'], ['c', 'd']]
+
+chunk(['a', 'b', 'c', 'd'], 3);
+// => [['a', 'b', 'c'], ['d']]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'compact',
+    name: '_.compact',
+    signature: '_.compact(array)',
+    category: 'Array',
+    description: 'Creates an array with all falsy values removed.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to compact.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `[0, 1, false, 2, '', 3].filter(Boolean)
+  // output: [1, 2, 3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'concat',
+    name: '_.concat',
+    signature: '_.concat(array, values)',
+    category: 'Array',
+    description: 'Creates a new array concatenating array with any additional arrays and/or values.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to concatenate.' },
+      { name: 'values', type: '*', description: 'The values to concatenate.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1]
+  var other = array.concat(2, [3], [[4]])
+
+  console.log(other)
+  // output: [1, 2, 3, [4]]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '5.5+', supported: true },
+    ],
+  },
+  {
+    id: 'difference',
+    name: '_.difference',
+    signature: '_.difference(array, values)',
+    category: 'Array',
+    description: 'Similar to without, but returns the values from array that are not present in the other arrays.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to inspect.' },
+      { name: 'values', type: 'Array', description: 'The values to exclude.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `let arrays = [[1, 2, 3, 4, 5], [5, 2, 10]];
+  console.log(arrays.reduce((a, b) => a.filter(c => !b.includes(c))));
+  // output: [1, 3, 4]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'drop',
+    name: '_.drop',
+    signature: '_.drop(array, n)',
+    category: 'Array',
+    description: 'Creates a slice of array with n elements dropped from the beginning.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+      { name: 'n', type: 'number', description: 'The number of elements to drop.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `[1, 2, 3].slice(1);
+  // => [2, 3]
+
+  [1, 2, 3].slice(2);
+  // => [3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'dropright',
+    name: '_.dropRight',
+    signature: '_.dropRight(array, n)',
+    category: 'Array',
+    description: 'Creates a slice of array with n elements dropped at the end.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+      { name: 'n', type: 'number', description: 'The number of elements to drop from the end.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `[1, 2, 3].slice(0, -1);
+  // => [1, 2]
+
+  [1, 2, 3].slice(0, -2);
+  // => [1]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'fill',
+    name: '_.fill',
+    signature: '_.fill(array, value, start, end)',
+    category: 'Array',
+    description: 'Fills elements of array with value from start up to, but not including, end.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to fill.' },
+      { name: 'value', type: '*', description: 'The value to fill array with.' },
+      { name: 'start', type: 'number', description: 'The start position.' },
+      { name: 'end', type: 'number', description: 'The end position.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1, 2, 3]
+
+  array.fill('a')
+
+  console.log(array)
+  // output: ['a', 'a', 'a']
+
+  Array(3).fill(2)
+  // output: [2, 2, 2]
+
+  [4, 6, 8, 10].fill('*', 1, 3)
+  // output: [4, '*', '*', 10]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '31+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'find',
+    name: '_.find',
+    signature: '_.find(collection, predicate)',
+    category: 'Array',
+    description: 'Returns the value of the first element in the array that satisfies the provided testing function. Otherwise undefined is returned.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to inspect.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `var users = [
+    { 'user': 'barney',  'age': 36, 'active': true },
+    { 'user': 'fred',    'age': 40, 'active': false },
+    { 'user': 'pebbles', 'age': 1,  'active': true }
+  ]
+
+  users.find(function (o) { return o.age < 40; })
+  // output: object for 'barney'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '25+', supported: true },
+      { browser: 'Safari', version: '7.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'findindex',
+    name: '_.findIndex',
+    signature: '_.findIndex(array, predicate)',
+    category: 'Array',
+    description: 'Returns the index of the first element in the array that satisfies the provided testing function. Otherwise -1 is returned.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to inspect.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: 'number', description: 'Returns the index of the found element, else -1.' },
+    examples: [
+      { label: 'ES5', code: `var users = [
+    { 'user': 'barney',  'age': 36, 'active': true },
+    { 'user': 'fred',    'age': 40, 'active': false },
+    { 'user': 'pebbles', 'age': 1,  'active': true }
+  ]
+
+  var index = users.findIndex(function (o) { return o.age >= 40; })
+  console.log(index)
+  // output: 1` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '25+', supported: true },
+      { browser: 'Safari', version: '7.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'first',
+    name: '_.first',
+    signature: '_.first(array)',
+    category: 'Array',
+    description: 'Returns the first element of an array. Passing n will return the first n elements of the array.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES6', code: `[1, 2, 3, 4, 5][0];
+  // => 1
+  //or
+  [].concat(1, 2, 3, 4, 5).shift()
+  // => 1
+  //or
+  [].concat([1, 2, 3, 4, 5]).shift()
+  // => 1
+
+  // Native (works even with potentially undefined/null, like _.first)
+  [].concat(undefined).shift()
+  // => undefined
+
+  [1, 2, 3, 4, 5].slice(0, 2);
+  // => [1, 2]
+
+  // Native with ES13
+  [1, 2, 3, 4, 5].at(0)
+  // => 1
+  //or
+  [].at(0)
+  // => undefined` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'flatten',
+    name: '_.flatten',
+    signature: '_.flatten(array)',
+    category: 'Array',
+    description: 'Flattens array a single level deep.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to flatten.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const flatten = [1, [2, [3, [4]], 5]].reduce( (a, b) => a.concat(b), [])
+  // => [1, 2, [3, [4]], 5]
+
+  const flatten = [].concat(...[1, [2, [3, [4]], 5]])
+  // => [1, 2, [3, [4]], 5]
+
+  // Native(ES2019)
+  const flatten = [1, [2, [3, [4]], 5]].flat()
+  // => [1, 2, [3, [4]], 5]
+
+  const flatten = [1, [2, [3, [4]], 5]].flatMap(number => number)
+  // => [1, 2, [3, [4]], 5]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'flattendeep',
+    name: '_.flattenDeep',
+    signature: '_.flattenDeep(array)',
+    category: 'Array',
+    description: 'Recursively flattens array.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to recursively flatten.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const flattenDeep = (arr) => Array.isArray(arr)
+    ? arr.reduce( (a, b) => a.concat(flattenDeep(b)) , [])
+    : [arr]
+
+  flattenDeep([1, [[2], [3, [4]], 5]])
+  // => [1, 2, 3, 4, 5]
+
+  // Native(ES2019)
+  [1, [2, [3, [4]], 5]].flat(Infinity)
+  // => [1, 2, 3, 4, 5]
+
+  const flattenDeep = (arr) => arr.flatMap((subArray, index) => Array.isArray(subArray) ? flattenDeep(subArray) : subArray)
+
+  flattenDeep([1, [[2], [3, [4]], 5]])
+  // => [1, 2, 3, 4, 5]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '7.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'frompairs',
+    name: '_.fromPairs',
+    signature: '_.fromPairs(pairs)',
+    category: 'Array',
+    description: 'Returns an object composed from key-value pairs.',
+    args: [
+      { name: 'pairs', type: 'Array', description: 'The key-value pairs.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `const fromPairs = function(arr) {
+    return arr.reduce(function(accumulator, value) {
+      accumulator[value[0]] = value[1];
+      return accumulator;
+    }, {})
+  }
+
+  // Compact form
+  const fromPairs = (arr) => arr.reduce((acc, val) => (acc[val[0]] = val[1], acc), {})
+
+  fromPairs([['a', 1], ['b', 2]]);
+  // => { 'a': 1, 'b': 2 }
+
+  // Native(ES2019)
+  Object.fromEntries([['a', 1], ['b', 2]])
+  // => { 'a': 1, 'b': 2 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'head',
+    name: '_.head',
+    signature: '_.head(array)',
+    category: 'Array',
+    description: 'Gets the first element or all but the first element.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES6', code: `const [ head, ...tail ] = array
+  console.log(head)
+  // output: 1
+  console.log(tail)
+  // output [2, 3]
+
+  // Native replacement for _.head in ES13
+  array.at(0)
+  // output: 1` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'tail',
+    name: '_.tail',
+    signature: '_.tail(array)',
+    category: 'Array',
+    description: 'Gets the first element or all but the first element.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const [ head, ...tail ] = array
+  console.log(head)
+  // output: 1
+  console.log(tail)
+  // output [2, 3]
+
+  // Native replacement for _.head in ES13
+  array.at(0)
+  // output: 1` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'indexof',
+    name: '_.indexOf',
+    signature: '_.indexOf(array, value, fromIndex)',
+    category: 'Array',
+    description: 'Returns the first index at which a given element can be found in the array, or -1 if it is not present.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to inspect.' },
+      { name: 'value', type: '*', description: 'The value to search for.' },
+      { name: 'fromIndex', type: 'number', description: 'The index to search from.' },
+    ],
+    returns: { type: 'number', description: 'Returns the index of the matched value, else -1.' },
+    examples: [
+      { label: 'ES5', code: `var array = [2, 9, 9]
+  var result = array.indexOf(2)
+  console.log(result)
+  // output: 0` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'intersection',
+    name: '_.intersection',
+    signature: '_.intersection(arrays)',
+    category: 'Array',
+    description: 'Returns an array that is the intersection of all the arrays. Each value in the result is present in each of the arrays.',
+    args: [
+      { name: 'arrays', type: 'Array', description: 'The arrays to inspect.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `let arrays = [[1, 2, 3], [101, 2, 1, 10], [2, 1]];
+  console.log(arrays.reduce((a, b) => a.filter(c => b.includes(c))));
+  // output: [1, 2]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'takeright',
+    name: '_.takeRight',
+    signature: '_.takeRight(array, n)',
+    category: 'Array',
+    description: 'Creates a slice of array with n elements taken from the end.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+      { name: 'n', type: 'number', description: 'The number of elements to take.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `[1, 2, 3].slice(-1);
+  // => [3]
+
+  [1, 2, 3].slice(-2);
+  // => [2, 3]
+
+  [1, 2, 3].slice(-5);
+  // => [1, 2, 3]
+
+  // Difference in compatibility` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'isarray',
+    name: '_.isArray',
+    signature: '_.isArray(value)',
+    category: 'Array',
+    description: 'Returns true if given value is an array.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `var array = []
+  console.log(Array.isArray(array));
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '4+', supported: true },
+      { browser: 'Safari', version: '5+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'isarraybuffer',
+    name: '_.isArrayBuffer',
+    signature: '_.isArrayBuffer(value)',
+    category: 'Array',
+    description: 'Checks if value is classified as an ArrayBuffer object.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(new ArrayBuffer(2) instanceof ArrayBuffer);
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'join',
+    name: '_.join',
+    signature: '_.join(array, separator)',
+    category: 'Array',
+    description: '> [!IMPORTANT] > Not in Underscore.js',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to join.' },
+      { name: 'separator', type: 'string', description: 'The element separator.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `var result = ['one', 'two', 'three'].join('--')
+  console.log(result)
+  // output: 'one--two--three'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '5.5+', supported: true },
+    ],
+  },
+  {
+    id: 'last',
+    name: '_.last',
+    signature: '_.last(array)',
+    category: 'Array',
+    description: 'Returns the last element of an array. Passing n will return the last n elements of the array.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES6', code: `const numbers = [1, 2, 3, 4, 5];
+  numbers[numbers.length - 1];
+  // => 5
+  //or
+  numbers.slice(-1)[0];
+  // => 5
+  //or
+  [].concat(numbers).pop()
+  // => 5
+  //or
+  numbers.at(-1);
+  // => 5
+
+  // Native (works even with potentially undefined/null)
+  [].concat(undefined).pop()
+  // => undefined
+
+  numbers.slice(-2);
+  // => [4, 5]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '5.5+', supported: true },
+    ],
+  },
+  {
+    id: 'lastindexof',
+    name: '_.lastIndexOf',
+    signature: '_.lastIndexOf(array, value, fromIndex)',
+    category: 'Array',
+    description: 'Returns the index of the last occurrence of value in the array, or -1 if value is not present.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to inspect.' },
+      { name: 'value', type: '*', description: 'The value to search for.' },
+      { name: 'fromIndex', type: 'number', description: 'The index to search from.' },
+    ],
+    returns: { type: 'number', description: 'Returns the index of the matched value, else -1.' },
+    examples: [
+      { label: 'ES5', code: `var array = [2, 9, 9, 4, 3, 6]
+  var result = array.lastIndexOf(9)
+  console.log(result)
+  // output: 2` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'reverse',
+    name: '_.reverse',
+    signature: '_.reverse(array)',
+    category: 'Array',
+    description: '> [!IMPORTANT] > Not in Underscore.js',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to reverse.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1, 2, 3]
+  console.log(array.reverse())
+  // output: [3, 2, 1]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'slice',
+    name: '_.slice',
+    signature: '_.slice(array, start, end)',
+    category: 'Array',
+    description: 'Returns a shallow copy of a portion of an array into a new array object selected from begin to end (end not included)',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to slice.' },
+      { name: 'start', type: 'number', description: 'The start position.' },
+      { name: 'end', type: 'number', description: 'The end position.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1, 2, 3, 4]
+  console.log(array.slice(1, 3));
+  // output: [2, 3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'without',
+    name: '_.without',
+    signature: '_.without(array, values)',
+    category: 'Array',
+    description: '> [!IMPORTANT] > Not in Underscore.js',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to inspect.' },
+      { name: 'values', type: '*', description: 'The values to exclude.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1, 2, 3]
+  console.log(array.filter(function(value) {
+    return value !== 2;
+  }));
+  // output: [1, 3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'initial',
+    name: '_.initial',
+    signature: '_.initial(array)',
+    category: 'Array',
+    description: 'Returns everything but the last entry of the array. Pass n to exclude the last n elements from the result.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to query.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [5, 4, 3, 2, 1]
+  console.log(array.slice(0, -2));
+  // output: [5, 4, 3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'pull',
+    name: '_.pull',
+    signature: '_.pull(array, values)',
+    category: 'Array',
+    description: 'Removes all provided values from the given array using strict equality for comparisons, i.e. ===.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to modify.' },
+      { name: 'values', type: '*', description: 'The values to remove.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const array = [1, 2, 3, 1, 2, 3];
+  _.pull(array, 2, 3);
+  console.log(array); // output: [1, 1]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'unionby',
+    name: '_.unionBy',
+    signature: '_.unionBy(arrays, iteratee)',
+    category: 'Array',
+    description: 'Creates an array of unique values, taking an iteratee to compute uniqueness with (note that to iterate by a key in an object you must use x => x.key instead of key for the iteratee)',
+    args: [
+      { name: 'arrays', type: 'Array', description: 'The arrays to inspect.' },
+      { name: 'iteratee', type: 'Function', description: 'The iteratee invoked per element.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `var array1 = [2.1];
+  var array2 = [1.2, 2.3];
+  function unionBy(...arrays) {
+      const iteratee = (arrays).pop();
+
+      if (Array.isArray(iteratee)) {
+          return []; // return empty if iteratee is missing
+      }
+
+      return [...arrays].flat().filter(
+          (set => (o) => set.has(iteratee(o)) ? false : set.add(iteratee(o)))(new Set()),
+      );
+  };
+  console.log(unionBy(array1, array2, Math.floor))
+  // output: [2.1, 1.2]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '69+', supported: true },
+      { browser: 'Firefox', version: '62+', supported: true },
+      { browser: 'Safari', version: '12+', supported: true },
+      { browser: 'Edge', version: '79+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'each',
+    name: '_.each',
+    signature: '_.each(collection, iteratee)',
+    category: 'Collection',
+    description: 'Iterates over a list of elements, yielding each in turn to an iteratee function.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: null,
+    examples: [
+      { label: 'ES6', code: `//For arrays
+  [1, 2, 3].forEach(function (value, index) {
+    console.log(value)
+  })
+  // output: 1 2 3
+
+  //For objects
+  Object.entries({'one':1, 'two':2, 'three':3}).forEach(function([key,value],index) {
+    console.log(value)
+  })
+  //output: 1 2 3` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'every',
+    name: '_.every',
+    signature: '_.every(collection, predicate)',
+    category: 'Collection',
+    description: 'Tests whether all elements in the array pass the test implemented by the provided function.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `function isLargerThanTen (element, index, array) {
+    return element >= 10
+  }
+
+  var array = [10, 20, 30]
+  var result = array.every(isLargerThanTen)
+  console.log(result)
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'filter',
+    name: '_.filter',
+    signature: '_.filter(collection, predicate)',
+    category: 'Collection',
+    description: 'Creates a new array with all elements that pass the test implemented by the provided function.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `function isBigEnough (value) {
+    return value >= 10
+  }
+  var array = [12, 5, 8, 130, 44]
+  var filtered = array.filter(isBigEnough)
+  console.log(filtered)
+  // output: [12, 130, 44]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'groupby',
+    name: '_.groupBy',
+    signature: '_.groupBy(collection, iteratee)',
+    category: 'Collection',
+    description: 'Group items by key.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The iteratee to group by.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `var grouped = ['one', 'two', 'three'].reduce((r, v, i, a, k = v.length) => ((r[k] || (r[k] = [])).push(v), r), {})
+  console.log(grouped)
+  // output: {3: ["one", "two"], 5: ["three"]}
+
+  // Native
+  Object.groupBy(['one', 'two', 'three'], ({length}) => length)
+  // output: {3: ["one", "two"], 5: ["three"]}` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'includes',
+    name: '_.includes',
+    signature: '_.includes(collection, value)',
+    category: 'Collection',
+    description: 'Checks if a value is in collection.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to inspect.' },
+      { name: 'value', type: '*', description: 'The value to search for.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1, 2, 3]
+  array.includes(1)
+  // output: true
+
+  // Native (does not use same value zero)
+  var array = [1, 2, 3]
+  array.indexOf(1) > -1
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '47+', supported: true },
+      { browser: 'Firefox', version: '43+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '14+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'keyby',
+    name: '_.keyBy',
+    signature: '_.keyBy(collection, iteratee)',
+    category: 'Collection',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The iteratee to key by.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `console.log(keyBy(['a', 'b', 'c']))
+  // output: { a: 'a', b: 'b', c: 'c' }
+  console.log(keyBy([{ id: 'a1', title: 'abc' }, { id: 'b2', title: 'def' }], 'id'))
+  // output: { a1: { id: 'a1', title: 'abc' }, b2: { id: 'b2', title: 'def' } }
+  console.log(keyBy(Object.values({ data: { id: 'a1', title: 'abc' }}), 'id'))
+  // output: { a1: { id: 'a1', title: 'abc' }}
+
+  // keyBy for array and object
+  const collectionKeyBy = (collection, key) => {
+    const c = collection || {};
+    return c.isArray() ? keyBy(c, key) : keyBy(Object.values(c), key);
+  }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'map',
+    name: '_.map',
+    signature: '_.map(collection, iteratee)',
+    category: 'Collection',
+    description: 'Translates all items in an array or object to new array of items.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array1 = [1, 2, 3]
+  var array2 = array1.map(function (value, index) {
+    return value * 2
+  })
+  console.log(array2)
+  // output: [2, 4, 6]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'minby',
+    name: '_.minBy',
+    signature: '_.minBy(array, iteratee)',
+    category: 'Collection',
+    description: 'Use Array.prototype.reduce() for find the maximum or minimum collection item',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The iteratee invoked per element.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `var data = [{ value: 6 }, { value: 2 }, { value: 4 }]
+  var minItem = data.reduce(function(a, b) { return a.value <= b.value ? a : b }, {})
+  var maxItem = data.reduce(function(a, b) { return a.value >= b.value ? a : b }, {})
+  console.log(minItem, maxItem)
+  // output: { value: 2 }, { value: 6 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'maxby',
+    name: '_.maxBy',
+    signature: '_.maxBy(array, iteratee)',
+    category: 'Collection',
+    description: 'Use Array.prototype.reduce() for find the maximum or minimum collection item',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The iteratee invoked per element.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `var data = [{ value: 6 }, { value: 2 }, { value: 4 }]
+  var minItem = data.reduce(function(a, b) { return a.value <= b.value ? a : b }, {})
+  var maxItem = data.reduce(function(a, b) { return a.value >= b.value ? a : b }, {})
+  console.log(minItem, maxItem)
+  // output: { value: 2 }, { value: 6 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'pluck',
+    name: '_.pluck',
+    signature: '_.pluck(collection, key)',
+    category: 'Collection',
+    description: 'array.map or _.map can also be used to replace _.pluck. Lodash v4.0 removed _.pluck in favor of _.map with iteratee shorthand. Details can be found in Changelog',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'key', type: 'string', description: 'The key to pluck.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array1 = [{name: "Alice"}, {name: "Bob"}, {name: "Jeremy"}]
+  var names = array1.map(function(x){
+    return x.name
+  })
+  console.log(names)
+  // output: ["Alice", "Bob", "Jeremy"]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'reduce',
+    name: '_.reduce',
+    signature: '_.reduce(collection, iteratee, accumulator)',
+    category: 'Collection',
+    description: 'Applies a function against an accumulator and each value of the array (from left-to-right) to reduce it to a single value.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The function invoked per iteration.' },
+      { name: 'accumulator', type: '*', description: 'The initial value.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `var array = [0, 1, 2, 3, 4]
+  var result = array.reduce(function (previousValue, currentValue, currentIndex, array) {
+    return previousValue + currentValue
+  })
+  console.log(result)
+  // output: 10` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'range',
+    name: '_.range',
+    signature: '_.range(start, end, step)',
+    category: 'Collection',
+    description: 'Creates an array of numbers progressing from start up to.',
+    args: [
+      { name: 'start', type: 'number', description: 'The start of the range.' },
+      { name: 'end', type: 'number', description: 'The end of the range.' },
+      { name: 'step', type: 'number', description: 'The value to increment or decrement by.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `_.range(4)  // output: [0, 1, 2, 3]
+  _.range(-4) // output: [0, -1, -2, -3]
+  _.range(1, 5)     // output: [1, 2, 3, 4]
+  _.range(0, 20, 5) // output: [0, 5, 10, 15]
+
+  // Native ( solution with Array.from )
+  Array.from({length: 4}, (_, i) => i)  // output: [0, 1, 2, 3]
+  Array.from({length: 4}, (_, i) => -i) // output: [-0, -1, -2, -3]
+  Array.from({length: 4}, (_, i) => i + 1) // output: [1, 2, 3, 4]
+  Array.from({length: 4}, (_, i) => i * 5) // output: [0, 5, 10, 15]
+
+  // Native ( solution with keys() and spread )
+  [...Array(4).keys()]  // output: [0, 1, 2, 3]
+  [...Array(4).keys()].map(k => -k) // output: [-0, -1, -2, -3]
+  [...Array(4).keys()].map(k => k + 1)  // output: [1, 2, 3, 4]
+  [...Array(4).keys()].map(k => k * 5)  // output: [0, 5, 10, 15]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '32+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'reduceright',
+    name: '_.reduceRight',
+    signature: '_.reduceRight(collection, iteratee, accumulator)',
+    category: 'Collection',
+    description: 'This method is like _.reduce except that it iterates over elements of collection from right to left.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The function invoked per iteration.' },
+      { name: 'accumulator', type: '*', description: 'The initial value.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `var array = [0, 1, 2, 3, 4]
+  var result = array.reduceRight(function (previousValue, currentValue, currentIndex, array) {
+    return previousValue - currentValue
+  })
+  console.log(result)
+  // output: -2` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'reject',
+    name: '_.reject',
+    signature: '_.reject(collection, predicate)',
+    category: 'Collection',
+    description: 'The opposite of _.filter; this method returns the elements of collection that predicate does not return truthy for.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var array = [1, 2, 3, 4, 5];
+
+  var reject = function (arr, predicate) {
+    var complement = function (f) {
+      return function (x) {
+        return !f(x);
+      }
+    };
+
+    return arr.filter(complement(predicate));
+  };
+  // output: [1, 3, 5]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '3+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'sample',
+    name: '_.sample',
+    signature: '_.sample(collection)',
+    category: 'Collection',
+    description: 'Gets a random element from array.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to sample.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES6', code: `const array = [0, 1, 2, 3, 4]
+  const sample = arr => {
+    const len = arr == null ? 0 : arr.length
+    return len ? arr[Math.floor(Math.random() * len)] : undefined
+  }
+
+  const result = sample(array)
+  console.log(result)
+  // output: 2` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'size',
+    name: '_.size',
+    signature: '_.size(collection)',
+    category: 'Collection',
+    description: 'Returns the number of values in the collection.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to inspect.' },
+    ],
+    returns: { type: 'number', description: 'Returns the number.' },
+    examples: [
+      { label: 'ES5', code: `var result2 = Object.keys({one: 1, two: 2, three: 3}).length
+  console.log(result2)
+  // output: 3` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '4+', supported: true },
+      { browser: 'Safari', version: '5+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'some',
+    name: '_.some',
+    signature: '_.some(collection, predicate)',
+    category: 'Collection',
+    description: 'Tests whether any of the elements in the array pass the test implemented by the provided function.',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per iteration.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `function isLargerThanTen (element, index, array) {
+    return element >= 10
+  }
+
+  var array = [10, 9, 8]
+  var result = array.some(isLargerThanTen)
+  console.log(result)
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'sortby',
+    name: '_.sortBy',
+    signature: '_.sortBy(collection, iteratees)',
+    category: 'Collection',
+    description: 'Sorts an array of object based on an object key provided by a parameter (note this is more limited than Underscore/Lodash).',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratees', type: '*', description: 'The iteratees to sort by.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const sortBy = (key) => {
+    return (a, b) => (a[key] > b[key]) ? 1 : ((b[key] > a[key]) ? -1 : 0);
+  };
+
+  // The native sort modifies the array in place. \`_.orderBy\` and \`_.sortBy\` do not, so we use \`.concat()\` to
+  // copy the array, then sort.
+  fruits.concat().sort(sortBy("name"));
+  // => [{name:"apple", amount: 4}, {name:"banana", amount: 2}, {name:"mango", amount: 1}, {name:"pineapple", amount: 2}]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '5.5+', supported: true },
+    ],
+  },
+  {
+    id: 'orderby',
+    name: '_.orderBy',
+    signature: '_.orderBy(collection, iteratees, orders)',
+    category: 'Collection',
+    description: 'Sorts an array of object based on an object key provided by a parameter (note this is more limited than Underscore/Lodash).',
+    args: [
+      { name: 'collection', type: 'Array|Object', description: 'The collection to iterate.' },
+      { name: 'iteratees', type: '*', description: 'The iteratees to sort by.' },
+      { name: 'orders', type: '*', description: 'The sort orders.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `const sortBy = (key) => {
+    return (a, b) => (a[key] > b[key]) ? 1 : ((b[key] > a[key]) ? -1 : 0);
+  };
+
+  // The native sort modifies the array in place. \`_.orderBy\` and \`_.sortBy\` do not, so we use \`.concat()\` to
+  // copy the array, then sort.
+  fruits.concat().sort(sortBy("name"));
+  // => [{name:"apple", amount: 4}, {name:"banana", amount: 2}, {name:"mango", amount: 1}, {name:"pineapple", amount: 2}]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '1+', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '5.5+', supported: true },
+    ],
+  },
+  {
+    id: 'uniq',
+    name: '_.uniq',
+    signature: '_.uniq(array)',
+    category: 'Collection',
+    description: 'Produces a duplicate-free version of the array, using === to test object equality.',
+    args: [
+      { name: 'array', type: 'Array', description: 'The array to inspect.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `var array = [1, 2, 1, 4, 1, 3];
+  var result = [...new Set(array)];
+  console.log(result)
+  // output: [1, 2, 4, 3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'after',
+    name: '_.after',
+    signature: '_.after(n, func)',
+    category: 'Function',
+    description: '> [!WARNING] > This is an alternative implementation',
+    args: [
+      { name: 'n', type: 'number', description: 'The number of calls before func is invoked.' },
+      { name: 'func', type: 'Function', description: 'The function to restrict.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `notes.forEach(function (note, index) {
+    console.log(note)
+    if (notes.length === (index + 1)) {
+      render()
+    }
+  })` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1.5+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'bind',
+    name: '_.bind',
+    signature: '_.bind(func, thisArg, partials)',
+    category: 'Function',
+    description: 'Create a new function that calls _func_ with _thisArg_ and _args_.',
+    args: [
+      { name: 'func', type: 'Function', description: 'The function to bind.' },
+      { name: 'thisArg', type: '*', description: 'The this binding of func.' },
+      { name: 'partials', type: '*', description: 'The arguments to be partially applied.' },
+    ],
+    returns: { type: 'Function', description: 'Returns the new function.' },
+    examples: [
+      { label: 'ES5', code: `var boundOffsetX = objA.offsetX.bind(objB, 0);` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '7+', supported: true },
+      { browser: 'Firefox', version: '4+', supported: true },
+      { browser: 'Safari', version: '5.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'isfunction',
+    name: '_.isFunction',
+    signature: '_.isFunction(value)',
+    category: 'Function',
+    description: 'Checks if value is classified as a _Function_ object.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `function isFunction(func) {
+  return typeof func === "function";
+}
+
+isFunction(setTimeout);
+// => true
+
+isFunction(123);
+// => false` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'debounce',
+    name: '_.debounce',
+    signature: '_.debounce(func, wait)',
+    category: 'Function',
+    description: 'Create a new function that calls func with thisArg and args.',
+    args: [
+      { name: 'func', type: 'Function', description: 'The function to debounce.' },
+      { name: 'wait', type: 'number', description: 'The number of milliseconds to delay.' },
+    ],
+    returns: { type: 'Function', description: 'Returns the new function.' },
+    examples: [
+      { label: 'ES6', code: `function debounce(func, wait, immediate) {
+	var timeout;
+	return function() {
+		var context = this, args = arguments;
+		clearTimeout(timeout);
+		if (immediate && !timeout) func.apply(context, args);
+		timeout = setTimeout(function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		}, wait);
+	};
+  }
+
+  // Avoid costly calculations while the window size is in flux.
+  jQuery(window).on('resize', debounce(calculateLayout, 150));` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '7+', supported: true },
+      { browser: 'Firefox', version: '4+', supported: true },
+      { browser: 'Safari', version: '5.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'partial',
+    name: '_.partial',
+    signature: '_.partial(func, partials)',
+    category: 'Function',
+    description: 'Create a new function that calls func with args.',
+    args: [
+      { name: 'func', type: 'Function', description: 'The function to partially apply.' },
+      { name: 'partials', type: '*', description: 'The arguments to be partially applied.' },
+    ],
+    returns: { type: 'Function', description: 'Returns the new function.' },
+    examples: [
+      { label: 'ES6', code: `function greet(greeting, name) {
+    return greeting + ' ' + name;
+  }
+  var sayHelloTo = (...args) => greet('Hello', ...args)
+  var result = sayHelloTo('Jose')
+  console.log(result)
+  // output: 'Hello Jose'
+
+  // Native
+  const partial = (func, ...boundArgs) => (...remainingArgs) => func(...boundArgs, ...remainingArgs)
+  var sayHelloTo = partial(greet, 'Hello');
+  var result = sayHelloTo('Jose')
+  console.log(result)
+  // output: 'Hello Jose'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '46+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'throttle',
+    name: '_.throttle',
+    signature: '_.throttle(func, wait)',
+    category: 'Function',
+    description: 'Create a new function that limits calls to func to once every given timeframe.',
+    args: [
+      { name: 'func', type: 'Function', description: 'The function to throttle.' },
+      { name: 'wait', type: 'number', description: 'The number of milliseconds to throttle invocations to.' },
+    ],
+    returns: { type: 'Function', description: 'Returns the new function.' },
+    examples: [
+      { label: 'ES6', code: `function throttle(func, timeFrame) {
+    var lastTime = 0;
+    return function (...args) {
+        var now = new Date();
+        if (now - lastTime >= timeFrame) {
+            func(...args);
+            lastTime = now;
+        }
+    };
+  }
+
+  // Avoid running the same function twice within the specified timeframe.
+  jQuery(window).on('resize', throttle(calculateLayout, 150));` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '3+', supported: true },
+      { browser: 'Safari', version: '4+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'castarray',
+    name: '_.castArray',
+    signature: '_.castArray(value)',
+    category: 'Lang',
+    description: 'Puts the value into an array of length one if it is not already an array.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to inspect.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `function castArray(arr) {
+  return Array.isArray(arr) ? arr : [arr]
+}
+// output: true
+console.log(castArray(5));
+// output: [5]
+console.log(castArray([2]));
+// output: [2]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '4+', supported: true },
+      { browser: 'Safari', version: '5+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'clonedeep',
+    name: '_.cloneDeep',
+    signature: '_.cloneDeep(value)',
+    category: 'Lang',
+    description: 'Creates a deep copy by recursively cloning the value.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to clone.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES5', code: `var objects = [{ 'a': 1 }, { 'b': 2 }];
+
+var clone = structuredClone(objects);
+console.log(clone[0] === objects[0]);
+// output: false` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '98+', supported: true },
+      { browser: 'Firefox', version: '94+', supported: true },
+      { browser: 'Safari', version: '15.4+', supported: true },
+      { browser: 'Edge', version: '98+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'isdate',
+    name: '_.isDate',
+    signature: '_.isDate(value)',
+    category: 'Lang',
+    description: 'Checks if value is classified as a Date object.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(Object.prototype.toString.call(new Date) === "[object Date]");
+// output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'gt',
+    name: '_.gt',
+    signature: '_.gt(value, other)',
+    category: 'Lang',
+    description: 'Checks if value is greater than other.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to compare.' },
+      { name: 'other', type: '*', description: 'The other value to compare.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(3 > 1);
+// output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'gte',
+    name: '_.gte',
+    signature: '_.gte(value, other)',
+    category: 'Lang',
+    description: 'Checks if value is greater than or equal to other.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to compare.' },
+      { name: 'other', type: '*', description: 'The other value to compare.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(3 >= 1);
+// output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'isempty',
+    name: '_.isEmpty',
+    signature: '_.isEmpty(value)',
+    category: 'Lang',
+    description: 'Checks if value is an empty object or collection.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `const isEmpty = obj => [Object, Array].includes((obj || {}).constructor) && !Object.entries((obj || {})).length;
+
+  console.log(isEmpty(null))
+  // output: true
+  console.log(isEmpty(''))
+  // output: true
+  console.log(isEmpty({}))
+  // output: true
+  console.log(isEmpty([]))
+  // output: true
+  console.log(isEmpty({a: '1'}))
+  // output: false` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '47+', supported: true },
+      { browser: 'Firefox', version: '43+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '14+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'isfinite',
+    name: '_.isFinite',
+    signature: '_.isFinite(value)',
+    category: 'Lang',
+    description: 'Checks if value is a finite primitive number.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(Number.isFinite('3'))
+  // output: false
+  console.log(Number.isFinite(3))
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '19+', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'isinteger',
+    name: '_.isInteger',
+    signature: '_.isInteger(value)',
+    category: 'Lang',
+    description: 'Checks if value is an integer.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(Number.isInteger(3))
+  // output: true
+  console.log(Number.isInteger('3'))
+  // output: false` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '16+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'isplainobject',
+    name: '_.isPlainObject',
+    signature: '_.isPlainObject(value)',
+    category: 'Lang',
+    description: 'Checks if value is a plain object, that is, an object created by the Object constructor or one with a [[Prototype]] of null.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `var result = _.isPlainObject(object);
+  console.log(result)
+  // output: true
+
+  function isPlainObject(value) {
+    if (typeof value !== 'object' || value === null) return false
+
+    if (Object.prototype.toString.call(value) !== '[object Object]') return false
+
+    const proto = Object.getPrototypeOf(value);
+    if (proto === null) return true
+
+    const Ctor = Object.prototype.hasOwnProperty.call(proto, 'constructor') && proto.constructor;
+    return (
+        typeof Ctor === 'function' &&
+        Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value)
+    );
+  }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '3.5+', supported: true },
+      { browser: 'Safari', version: '5+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'isnan',
+    name: '_.isNaN',
+    signature: '_.isNaN(value)',
+    category: 'Lang',
+    description: 'Checks if a value is NaN.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `console.log(Number.isNaN(NaN))
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'isnil',
+    name: '_.isNil',
+    signature: '_.isNil(value)',
+    category: 'Lang',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(null == null);
+// output: true
+console.log(NaN == null);
+// output: false
+console.log(undefined == null)
+// output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'isnull',
+    name: '_.isNull',
+    signature: '_.isNull(value)',
+    category: 'Lang',
+    description: 'Checks if value is null.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(null === null);
+// output: true
+console.log(void 0 === null);
+// output: false` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'isundefined',
+    name: '_.isUndefined',
+    signature: '_.isUndefined(value)',
+    category: 'Lang',
+    description: 'Checks if value is undefined.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `console.log(typeof a === 'undefined');
+// output: true
+console.log(a === undefined);
+// output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'assign',
+    name: '_.assign',
+    signature: '_.assign(object, sources)',
+    category: 'Object',
+    description: 'The method is used to copy the values of all enumerable own properties from one or more source objects to a target object.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The destination object.' },
+      { name: 'sources', type: '*', description: 'The source objects.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `function Foo() {
+    this.c = 3;
+  }
+  function Bar() {
+    this.e = 5;
+  }
+  Foo.prototype.d = 4;
+  Bar.prototype.f = 6;
+  var result = Object.assign({}, new Foo, new Bar);
+  console.log(result);
+  // output: { 'c': 3, 'e': 5 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '34+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'defaults',
+    name: '_.defaults',
+    signature: '_.defaults(object, sources)',
+    category: 'Object',
+    description: 'The method is used to apply new values over an object with default values for keys.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The destination object.' },
+      { name: 'sources', type: '*', description: 'The source objects.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `const newValues = {a: 3};
+  const defaultValues = {a: 1, b: 2}
+  const appliedValues = Object.assign({}, defaultValues, newValues);
+  // output { a: 3, b: 2 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '34+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'extend',
+    name: '_.extend',
+    signature: '_.extend(object, sources)',
+    category: 'Object',
+    description: 'The method is used to copy the values of all enumerable own and inherited properties from one or more source objects to a target object.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The destination object.' },
+      { name: 'sources', type: '*', description: 'The source objects.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `function Foo() {
+    this.c = 3;
+  }
+  function Bar() {
+    this.e = 5;
+  }
+  Foo.prototype.d = 4;
+  Bar.prototype.f = 6;
+  var result = Object.assign({}, new Foo, Foo.prototype, new Bar, Bar.prototype);
+  console.log(result);
+  // output: { 'c': 3, 'd': 4, 'e': 5, 'f': 6 }
+
+  //Or using a function
+  const extend = (target, ...sources) => {
+   const length = sources.length;
+
+    if (length < 1 || target == null) return target;
+    for (let i = 0; i < length; i++) {
+      const source = sources[i];
+
+      for (const key in source) {
+        target[key] = source[key];
+      }
+    }
+    return target;
+  };
+  console.log(extend({}, new Foo, new Bar));
+  // output: { 'c': 3, 'd': 4, 'e': 5, 'f': 6 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '45+', supported: true },
+      { browser: 'Firefox', version: '34+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'has',
+    name: '_.has',
+    signature: '_.has(object, path)',
+    category: 'Object',
+    description: 'Checks if key is a direct property of object. Key may be a path of a value separated by .',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to query.' },
+      { name: 'path', type: '*', description: 'The path to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `const has = function (obj, key) {
+    var keyParts = key.split('.');
+
+    return !!obj && (
+      keyParts.length > 1
+        ? has(obj[key.split('.')[0]], keyParts.slice(1).join('.'))
+        : hasOwnProperty.call(obj, key)
+    );
+  };
+
+  var object = { a: 1, b: 'settings' };
+  var result = has(object, 'a');
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '3+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: '5.5+', supported: true },
+    ],
+  },
+  {
+    id: 'get',
+    name: '_.get',
+    signature: '_.get(object, path, defaultValue)',
+    category: 'Object',
+    description: 'Gets the value at path of object.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to query.' },
+      { name: 'path', type: '*', description: 'The path of the property to get.' },
+      { name: 'defaultValue', type: '*', description: 'The value returned for undefined resolved values.' },
+    ],
+    returns: { type: '*', description: 'Returns the result.' },
+    examples: [
+      { label: 'ES6', code: `const get = (obj, path, defaultValue = undefined) => {
+    const travel = regexp =>
+      String.prototype.split
+        .call(path, regexp)
+        .filter(Boolean)
+        .reduce((res, key) => (res !== null && res !== undefined ? res[key] : res), obj);
+    const result = travel(/[,[\\]]+?/) || travel(/[,[\\].]+?/);
+    return result === undefined || result === obj ? defaultValue : result;
+  };
+
+  var object = { a: [{ b: { c: 3 } }] };
+  var result = get(object, 'a[0].b.c', 1);
+  // output: 3` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '49+', supported: true },
+      { browser: 'Firefox', version: '41+', supported: true },
+      { browser: 'Safari', version: '8+', supported: true },
+      { browser: 'Edge', version: '14+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'invert',
+    name: '_.invert',
+    signature: '_.invert(object)',
+    category: 'Object',
+    description: 'Creates an object composed of the inverted keys and values of object. If object contains duplicate values, subsequent values overwrite property assignments of previous values.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to invert.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `var result = _.invert(object);
+  console.log(result)
+  // output: { '1': 'c', '2': 'b' }
+
+  // Native (IE6)
+  function invert(object) {
+    var obj = {};
+    for (var key in object) {
+      if (object.hasOwnProperty(key)) {
+        obj[object[key]] = key;
+      }
+    }
+    return obj;
+  }
+  var result = invert(object);
+  console.log(result)
+  // output: { '1': 'c', '2': 'b' }
+
+  // Native (IE not supported)
+  const invert = object => Object.entries(object)
+    .reduce((acc, current) => {
+      acc[current[1]] = current[0];
+      return acc;
+    }, {}
+  );` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '4+', supported: true },
+      { browser: 'Firefox', version: '2+', supported: true },
+      { browser: 'Safari', version: '3.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '6+', supported: true },
+    ],
+  },
+  {
+    id: 'keys',
+    name: '_.keys',
+    signature: '_.keys(object)',
+    category: 'Object',
+    description: 'Retrieves all the names of the object\'s own enumerable properties.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to query.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var result2 = Object.keys({one: 1, two: 2, three: 3})
+  console.log(result2)
+  // output: ["one", "two", "three"]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '4+', supported: true },
+      { browser: 'Safari', version: '5+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'mapkeys',
+    name: '_.mapKeys',
+    signature: '_.mapKeys(object, iteratee)',
+    category: 'Object',
+    description: 'The opposite of _.mapValues; this method creates an object with the same values as object and keys generated by running each own enumerable string keyed property of object thru iteratee. The iteratee is invoked with three arguments: (value, key, object).',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to iterate.' },
+      { name: 'iteratee', type: 'Function', description: 'The iteratee invoked per iteration.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `var result = _.mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
+    return key + value;
+  });
+  console.log(result)
+  // output: { 'a1': 1, 'b2': 2 }
+
+  // Native (IE6)
+  function mapKeys(object, cb) {
+    var obj = {};
+    for (var key in object) {
+      if (object.hasOwnProperty(key)) {
+          var newKey = cb(object[key], key, object);
+          obj[newKey] = object[key];
+      }
+    }
+    return obj;
+  }
+  var result = mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
+    return key + value;
+  });
+  console.log(result)
+  // output: { 'a1': 1, 'b2': 2 }
+
+  // Native (IE not supported)
+    const mapKeys = (object, cb) => Object.entries(object)
+      .reduce((acc, current) => {
+        const newKey = cb(current[1], current[0], object);
+        acc[newKey] = current[1];
+        return acc;
+      }, {}
+  );
+  const result2 = mapKeys({ 'a': 1, 'b': 2 }, function(value, key) {
+    return key + value;
+  });
+  console.log(result2)
+  // output: { 'a1': 1, 'b2': 2 }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '4+', supported: true },
+      { browser: 'Firefox', version: '2+', supported: true },
+      { browser: 'Safari', version: '3.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '6+', supported: true },
+    ],
+  },
+  {
+    id: 'omit',
+    name: '_.omit',
+    signature: '_.omit(object, paths)',
+    category: 'Object',
+    description: 'Returns a copy of the object, filtered to omit the keys specified.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The source object.' },
+      { name: 'paths', type: '*', description: 'The property paths to omit.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `var { a, c, ...result2 } = object;
+  console.log(result2)
+  // output: { 'b': '2' }` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '60+', supported: true },
+      { browser: 'Firefox', version: '55+', supported: true },
+      { browser: 'Safari', version: null, supported: false },
+      { browser: 'Edge', version: '79+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'pick',
+    name: '_.pick',
+    signature: '_.pick(object, paths)',
+    category: 'Object',
+    description: 'Creates an object composed of the object properties predicate returns truthy for.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The source object.' },
+      { name: 'paths', type: '*', description: 'The property paths to pick.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `function pick(object, keys) {
+    return keys.reduce((obj, key) => {
+       if (object && object.hasOwnProperty(key)) {
+          obj[key] = object[key];
+       }
+       return obj;
+     }, {});
+  }
+  var result = pick(object, ['a', 'c', 'x']);
+  console.log(result)
+  // output: {a: 1, c: 3}` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '38+', supported: true },
+      { browser: 'Firefox', version: '13+', supported: true },
+      { browser: 'Safari', version: '7.1+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '12+', supported: true },
+    ],
+  },
+  {
+    id: 'pickby',
+    name: '_.pickBy',
+    signature: '_.pickBy(object, predicate)',
+    category: 'Object',
+    description: 'Creates an object composed of the object properties predicate returns truthy for.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The source object.' },
+      { name: 'predicate', type: 'Function', description: 'The function invoked per property.' },
+    ],
+    returns: { type: 'Object', description: 'Returns the new object.' },
+    examples: [
+      { label: 'ES6', code: `function pickBy(object) {
+      const obj = {};
+      for (const key in object) {
+          if (object[key]) {
+              obj[key] = object[key];
+          }
+      }
+      return obj;
+  }
+  var result = pickBy(object);
+  console.log(result)
+  // output: {a: 1, c: 3}` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '6+', supported: true },
+    ],
+  },
+  {
+    id: 'topairs',
+    name: '_.toPairs',
+    signature: '_.toPairs(object)',
+    category: 'Object',
+    description: 'Retrieves all the given object\'s own enumerable property [ key, value ] pairs.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to query.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES6', code: `var result2 = Object.entries({one: 1, two: 2, three: 3})
+  console.log(result2)
+  // output: [["one", 1], ["two", 2], ["three", 3]]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '54+', supported: true },
+      { browser: 'Firefox', version: '47+', supported: true },
+      { browser: 'Safari', version: '10.1+', supported: true },
+      { browser: 'Edge', version: '14+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'values',
+    name: '_.values',
+    signature: '_.values(object)',
+    category: 'Object',
+    description: 'Retrieves all the given object\'s own enumerable property values.',
+    args: [
+      { name: 'object', type: 'Object', description: 'The object to query.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var result2 = Object.values({one: 1, two: 2, three: 3})
+  console.log(result2)
+  // output: [1, 2, 3]` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '54+', supported: true },
+      { browser: 'Firefox', version: '47+', supported: true },
+      { browser: 'Safari', version: '10.1+', supported: true },
+      { browser: 'Edge', version: '14+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'capitalize',
+    name: '_.capitalize',
+    signature: '_.capitalize(string)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to capitalize.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES6', code: `const capitalize = (string) => {
+    return string ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : '';
+  };
+
+  var result = capitalize('FRED');
+  console.log(result);
+  // => 'Fred'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'endswith',
+    name: '_.endsWith',
+    signature: '_.endsWith(string, target)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to inspect.' },
+      { name: 'target', type: 'string', description: 'The string to search for.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `'abc'.endsWith('c');
+  // => true
+
+  'abc'.endsWith('b');
+  // => false
+
+  'abc'.endsWith('b', 2);
+  // => true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '41+', supported: true },
+      { browser: 'Firefox', version: '17+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'isstring',
+    name: '_.isString',
+    signature: '_.isString(value)',
+    category: 'String',
+    description: 'Checks if value is classified as a String primitive or object.',
+    args: [
+      { name: 'value', type: '*', description: 'The value to check.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES6', code: `function isString(str){
+    if (str != null && typeof str.valueOf() === "string") {
+      return true
+    }
+    return false
+  }
+
+  isString('abc');
+  // => true
+
+  isString(123);
+  // => false` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'lowerfirst',
+    name: '_.lowerFirst',
+    signature: '_.lowerFirst(string)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to convert.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES6', code: `const lowerFirst = (string) => {
+    return string ? string.charAt(0).toLowerCase() + string.slice(1) : ''
+  }
+
+  var result = lowerFirst('Fred')
+  console.log(result)
+  // output: 'fred'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'padstart',
+    name: '_.padStart',
+    signature: '_.padStart(string, length, chars)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to pad.' },
+      { name: 'length', type: 'number', description: 'The padding length.' },
+      { name: 'chars', type: 'string', description: 'The string used as padding.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `console.log('123'.padStart(5, '0'))
+  // output: '00123'
+
+  console.log('123'.padEnd(5, '0'))
+  // output: '12300'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '57+', supported: true },
+      { browser: 'Firefox', version: '48+', supported: true },
+      { browser: 'Safari', version: '10+', supported: true },
+      { browser: 'Edge', version: '15+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'padend',
+    name: '_.padEnd',
+    signature: '_.padEnd(string, length, chars)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to pad.' },
+      { name: 'length', type: 'number', description: 'The padding length.' },
+      { name: 'chars', type: 'string', description: 'The string used as padding.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `console.log('123'.padStart(5, '0'))
+  // output: '00123'
+
+  console.log('123'.padEnd(5, '0'))
+  // output: '12300'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '57+', supported: true },
+      { browser: 'Firefox', version: '48+', supported: true },
+      { browser: 'Safari', version: '10+', supported: true },
+      { browser: 'Edge', version: '15+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'repeat',
+    name: '_.repeat',
+    signature: '_.repeat(string, n)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to repeat.' },
+      { name: 'n', type: 'number', description: 'The number of times to repeat the string.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `var result = 'abc'.repeat(2)
+  console.log(result)
+  // output: 'abcabc'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '41+', supported: true },
+      { browser: 'Firefox', version: '24+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'replace',
+    name: '_.replace',
+    signature: '_.replace(string, pattern, replacement)',
+    category: 'String',
+    description: 'Returns a new string with some or all matches of a pattern replaced by a replacement.',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to modify.' },
+      { name: 'pattern', type: '*', description: 'The pattern to replace.' },
+      { name: 'replacement', type: '*', description: 'The match replacement.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `var re = /apples/gi;
+  var str = 'Apples are round, and apples are juicy.';
+  var result = str.replace(re, 'oranges');
+  console.log(result);
+  // output: 'oranges are round, and oranges are juicy.'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'split',
+    name: '_.split',
+    signature: '_.split(string, separator, limit)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to split.' },
+      { name: 'separator', type: 'string', description: 'The separator pattern.' },
+      { name: 'limit', type: 'number', description: 'The length to truncate results to.' },
+    ],
+    returns: { type: 'Array', description: 'Returns the new array.' },
+    examples: [
+      { label: 'ES5', code: `var result = 'a-b-c'.split('-', 2)
+  console.log(result)
+  // output: ['a','b']` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'startswith',
+    name: '_.startsWith',
+    signature: '_.startsWith(string, target)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to inspect.' },
+      { name: 'target', type: 'string', description: 'The string to search for.' },
+    ],
+    returns: { type: 'boolean', description: 'Returns true or false.' },
+    examples: [
+      { label: 'ES5', code: `var result = 'abc'.startsWith('b', 1)
+  console.log(result)
+  // output: true` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '41+', supported: true },
+      { browser: 'Firefox', version: '17+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'template',
+    name: '_.template',
+    signature: '_.template(string)',
+    category: 'String',
+    description: '> [!NOTE] > This is an alternative implementation. Native template literals not escape html.',
+    args: [
+      { name: 'string', type: 'string', description: 'The template string.' },
+    ],
+    returns: { type: 'Function', description: 'Returns the compiled template function.' },
+    examples: [
+      { label: 'ES6', code: `const templateLiteral = (value) => \`hello \${value.user}\`;
+  var result = templateLiteral({ 'user': 'fred' });
+  console.log(result);
+  // output: 'hello fred'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '41+', supported: true },
+      { browser: 'Firefox', version: '34+', supported: true },
+      { browser: 'Safari', version: '9+', supported: true },
+      { browser: 'Edge', version: '12+', supported: true },
+      { browser: 'IE', version: null, supported: false },
+    ],
+  },
+  {
+    id: 'tolower',
+    name: '_.toLower',
+    signature: '_.toLower(string)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to convert.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `var result = 'FOOBAR'.toLowerCase()
+  console.log(result)
+  // output: 'foobar'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'toupper',
+    name: '_.toUpper',
+    signature: '_.toUpper(string)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to convert.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `var result = 'foobar'.toUpperCase()
+  console.log(result)
+  // output: 'FOOBAR'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '1+', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+  {
+    id: 'trim',
+    name: '_.trim',
+    signature: '_.trim(string, chars)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to trim.' },
+      { name: 'chars', type: 'string', description: 'The characters to trim.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES5', code: `var result = ' abc '.trim()
+  console.log(result)
+  // output: 'abc'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '5+', supported: true },
+      { browser: 'Firefox', version: '3.5+', supported: true },
+      { browser: 'Safari', version: '5+', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '9+', supported: true },
+    ],
+  },
+  {
+    id: 'upperfirst',
+    name: '_.upperFirst',
+    signature: '_.upperFirst(string)',
+    category: 'String',
+    description: '> [!WARNING] > Not in Underscore.js',
+    args: [
+      { name: 'string', type: 'string', description: 'The string to convert.' },
+    ],
+    returns: { type: 'string', description: 'Returns the resulting string.' },
+    examples: [
+      { label: 'ES6', code: `const upperFirst = (string) => {
+    return string ? string.charAt(0).toUpperCase() + string.slice(1) : ''
+  }
+
+  var result = upperFirst('george')
+  console.log(result)
+  // output: 'George'` },
+    ],
+    compat: [
+      { browser: 'Chrome', version: '✓', supported: true },
+      { browser: 'Firefox', version: '✓', supported: true },
+      { browser: 'Safari', version: '✓', supported: true },
+      { browser: 'Edge', version: '✓', supported: true },
+      { browser: 'IE', version: '✓', supported: true },
+    ],
+  },
+];
+
+    // ── CompatBadges ──────────────────────────────────────────────────────────
+    const CompatBadges = defineComponent({
+      props: {
+        compat: { type: Array, required: true },
+      },
+      template: `
+        <div class="compat-row">
+          <span
+            v-for="entry in compat"
+            :key="entry.browser"
+            :class="['compat-badge', { unsupported: !entry.supported }]"
+          >{{ entry.browser }} {{ entry.version ?? '\u2717' }}</span>
+        </div>
+      `,
+    });
+
+    // ── CodeBlock ─────────────────────────────────────────────────────────────
+    const CodeBlock = defineComponent({
+      props: {
+        code:  { type: String, required: true },
+        label: { type: String, required: true },
+      },
+      data() {
+        return { copyLabel: 'Copy' };
+      },
+      computed: {
+        highlighted() {
+          let s = this.code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+          // 1. Comments
+          s = s.replace(/(\/\/.*$)/gm, '<span class="cm">$1</span>');
+          // 2. Strings
+          s = s.replace(/(`[^`]*`|'[^']*'|"[^"]*")/g, '<span class="str">$1</span>');
+          // 3. Numbers
+          s = s.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+          // 4. Keywords
+          s = s.replace(
+            /\b(const|let|var|return|function|new|if|else|for|of|in|typeof)\b/g,
+            '<span class="kw">$1</span>'
+          );
+          return s;
+        },
+      },
+      methods: {
+        copyCode() {
+          navigator.clipboard.writeText(this.code).then(() => {
+            this.copyLabel = 'Copied!';
+            setTimeout(() => { this.copyLabel = 'Copy'; }, 1500);
+          }).catch(() => {});
+        },
+      },
+      template: `
+        <div>
+          <div class="code-label">Example ({{ label }})</div>
+          <pre class="code-pre">
+            <button class="copy-btn" @click="copyCode">{{ copyLabel }}</button>
+            <span v-html="highlighted"></span>
+          </pre>
+        </div>
+      `,
+    });
+
+    // ── MethodCard ────────────────────────────────────────────────────────────
+    const MethodCard = defineComponent({
+      components: { CodeBlock, CompatBadges },
+      props: {
+        method: { type: Object, required: true },
+      },
+      computed: {
+        subtitle() {
+          const label = this.method.examples[0]?.label;
+          if (label === 'ES6') return 'Native (ES6+)';
+          if (label === 'ES5') return 'Native (ES5+)';
+          return 'Native';
+        },
+      },
+      template: `
+        <section
+          :id="method.id"
+          :data-method-id="method.id"
+          class="method-section"
+        >
+          <h2 class="method-signature">
+            <a :href="'#' + method.id">{{ method.signature }}</a>
+          </h2>
+          <div class="method-subtitle">{{ subtitle }}</div>
+          <p class="method-desc">{{ method.description }}</p>
+
+          <table v-if="method.args.length > 0" class="args-table">
+            <thead>
+              <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="arg in method.args" :key="arg.name">
+                <td>{{ arg.name }}</td>
+                <td><span class="arg-type">{{ arg.type }}</span></td>
+                <td>{{ arg.description }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <template v-if="method.returns !== null">
+            <div class="returns-header">Returns</div>
+            <div class="returns-value">
+              <span class="arg-type">{{ method.returns.type }}</span>
+              — {{ method.returns.description }}
+            </div>
+          </template>
+
+          <CodeBlock
+            v-for="ex in method.examples"
+            :key="ex.label"
+            :code="ex.code"
+            :label="ex.label"
+          />
+
+          <CompatBadges :compat="method.compat" />
+        </section>
+      `,
+    });
+
+    // ── MethodList ────────────────────────────────────────────────────────────
+    const MethodList = defineComponent({
+      components: { MethodCard },
+      props: {
+        methods:     { type: Array,  required: true },
+        searchQuery: { type: String, default: '' },
+      },
+      emits: ['update:activeMethodId'],
+      setup(props, { emit }) {
+        let observer = null;
+        const mainRef = ref(null);
+
+        function buildObserver(el) {
+          if (observer) observer.disconnect();
+          observer = new IntersectionObserver((entries) => {
+            const visible = entries.filter(e => e.isIntersecting);
+            if (!visible.length) return;
+
+            const positive = visible.filter(e => e.boundingClientRect.top >= 0);
+            const chosen = positive.length
+              ? positive.reduce((a, b) => a.boundingClientRect.top <= b.boundingClientRect.top ? a : b)
+              : visible.reduce((a, b) => a.boundingClientRect.top >= b.boundingClientRect.top ? a : b);
+
+            emit('update:activeMethodId', chosen.target.dataset.methodId);
+          }, { threshold: [0, 0.1, 0.3] });
+
+          el.querySelectorAll('section[data-method-id]').forEach(sec => observer.observe(sec));
+        }
+
+        watch(() => props.methods, () => {
+          nextTick(() => { if (mainRef.value) buildObserver(mainRef.value); });
+        }, { flush: 'post' });
+
+        onMounted(() => { if (mainRef.value) buildObserver(mainRef.value); });
+        onUnmounted(() => { if (observer) observer.disconnect(); });
+
+        return { mainRef };
+      },
+      template: `
+        <main ref="mainRef">
+          <p v-if="methods.length === 0" class="empty-state">
+            No methods found for '{{ searchQuery }}'
+          </p>
+          <MethodCard
+            v-for="method in methods"
+            :key="method.id"
+            :method="method"
+          />
+        </main>
+      `,
+    });
+
+    // ── TopBar ────────────────────────────────────────────────────────────────
+    const TopBar = defineComponent({
+      props: {
+        modelValue: { type: String, default: '' },
+      },
+      emits: ['update:modelValue'],
+      template: `
+        <header class="top-bar">
+          <div class="logo">No<span class="logo-dash">Dash</span></div>
+          <input
+            class="search-input"
+            type="search"
+            placeholder="Search methods..."
+            :value="modelValue"
+            @input="$emit('update:modelValue', $event.target.value)"
+          />
+          <span class="version-badge">You Don't Need Lodash</span>
+        </header>
+      `,
+    });
+
+    // ── Sidebar ───────────────────────────────────────────────────────────────
+    const Sidebar = defineComponent({
+      props: {
+        methods:        { type: Array,  required: true },
+        activeMethodId: { type: String, default: '' },
+      },
+      computed: {
+        categories() {
+          const order = ['Array','Collection','Function','Lang','Object','String'];
+          const map = {};
+          for (const m of this.methods) {
+            if (!map[m.category]) map[m.category] = [];
+            map[m.category].push(m);
+          }
+          return order.filter(cat => map[cat]).map(cat => ({ name: cat, methods: map[cat] }));
+        },
+      },
+      template: `
+        <nav class="sidebar">
+          <template v-for="cat in categories" :key="cat.name">
+            <div class="sidebar-category">{{ cat.name }}</div>
+            <a
+              v-for="m in cat.methods"
+              :key="m.id"
+              :href="'#' + m.id"
+              :class="['sidebar-method', { active: m.id === activeMethodId }]"
+            >{{ m.name }}</a>
+          </template>
+        </nav>
+      `,
+    });
+
+    // ── App root ──────────────────────────────────────────────────────────────
+    const App = defineComponent({
+      components: { TopBar, Sidebar, MethodList },
+      setup() {
+        const searchQuery    = ref('');
+        const activeMethodId = ref('');
+
+        const filteredMethods = computed(() => {
+          const q = searchQuery.value.toLowerCase().trim();
+          if (!q) return methods;
+          return methods.filter(m =>
+            m.id.toLowerCase().includes(q) ||
+            m.name.toLowerCase().includes(q) ||
+            m.category.toLowerCase() === q
+          );
+        });
+
+        watch(filteredMethods, (list) => {
+          if (!list.find(m => m.id === activeMethodId.value)) {
+            activeMethodId.value = list[0]?.id ?? '';
+          }
+        });
+
+        function syncFromHash() {
+          const hash = window.location.hash.slice(1);
+          if (hash && methods.find(m => m.id === hash)) {
+            activeMethodId.value = hash;
+          }
+        }
+
+        onMounted(() => {
+          const hash = window.location.hash.slice(1);
+          if (hash && methods.find(m => m.id === hash)) {
+            activeMethodId.value = hash;
+          } else {
+            activeMethodId.value = methods[0]?.id ?? '';
+          }
+          window.addEventListener('hashchange', syncFromHash);
+        });
+
+        onUnmounted(() => {
+          window.removeEventListener('hashchange', syncFromHash);
+        });
+
+        return { searchQuery, activeMethodId, filteredMethods };
+      },
+      template: `
+        <TopBar v-model="searchQuery" />
+        <div class="layout">
+          <Sidebar
+            :methods="filteredMethods"
+            :activeMethodId="activeMethodId"
+          />
+          <div class="content-wrap">
+            <MethodList
+              :methods="filteredMethods"
+              :searchQuery="searchQuery"
+              @update:activeMethodId="activeMethodId = $event"
+            />
+            <footer>
+              <span>Based on <a href="https://github.com/you-dont-need/You-Dont-Need-Lodash-Underscore" target="_blank">You Don't Need Lodash/Underscore</a></span>
+              <span>Built with <a href="https://claude.ai/code" target="_blank">Claude Code</a></span>
+            </footer>
+          </div>
+        </div>
+      `,
+    });
+
+    createApp(App).mount('#app');
+
+  </script>
+</body>
+</html>
