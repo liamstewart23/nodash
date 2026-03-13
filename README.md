@@ -4,7 +4,7 @@ A fast, searchable reference for vanilla JS alternatives to lodash and underscor
 
 ## What it is
 
-NoDash shows you how to replace common lodash utilities with modern JavaScript or short Vue 3 composable equivalents. Each entry includes the lodash signature, a native implementation, and usage notes.
+NoDash shows you how to replace common lodash utilities with modern JavaScript. Each entry includes the lodash/underscore.js method, a native implementation, and usage notes.
 
 ## Usage
 
