@@ -3160,23 +3160,37 @@ console.log(result)
         methods:        { type: Array,  required: true },
         activeMethodId: { type: String, default: '' },
       },
-      computed: {
-        categories() {
+      setup(props) {
+        const collapsedCategories = ref(new Set());
+
+        const categories = computed(() => {
           const order = ['Array','Collection','Function','Lang','Object','String'];
           const map = {};
-          for (const m of this.methods) {
+          for (const m of props.methods) {
             if (!map[m.category]) map[m.category] = [];
             map[m.category].push(m);
           }
           return order.filter(cat => map[cat]).map(cat => ({ name: cat, methods: map[cat] }));
-        },
+        });
+
+        function toggleCategory(name) {
+          const s = new Set(collapsedCategories.value);
+          s.has(name) ? s.delete(name) : s.add(name);
+          collapsedCategories.value = s;
+        }
+
+        return { categories, collapsedCategories, toggleCategory };
       },
       template: `
         <nav class="sidebar">
           <template v-for="cat in categories" :key="cat.name">
-            <div class="sidebar-category">{{ cat.name }}</div>
+            <div class="sidebar-category" @click="toggleCategory(cat.name)">
+              {{ cat.name }}
+              <span class="sidebar-toggle">{{ collapsedCategories.has(cat.name) ? '+' : '−' }}</span>
+            </div>
             <a
               v-for="m in cat.methods"
+              v-show="!collapsedCategories.has(cat.name)"
               :key="m.id"
               :href="'#' + m.id"
               :class="['sidebar-method', { active: m.id === activeMethodId }]"
